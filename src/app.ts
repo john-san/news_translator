@@ -1,13 +1,13 @@
 // for VN Express
 const puppeteer = require('puppeteer')
-const translate = require('google-translate-api')
+const translate = require('@iamtraction/google-translate')
 
 const url = 'https://vnexpress.net/topic/tp-ho-chi-minh-26483'
 // click the the div with class name: article-topstory
 // get the url of the article
 // get the h1 tag with class name: title-detail
 // get the article tag with class name: fck_detail
-// get each p tag inside the article tag with class name: Normal
+// look for span tag with class name: date
 // save the contents to a csv file
 
 const scrape = async () => {
@@ -19,42 +19,70 @@ const scrape = async () => {
 		await page.click('.article-topstory')
 		await page.waitForSelector('.title-detail')
 		await page.waitForSelector('.fck_detail')
-		await page.waitForSelector('.Normal')
+		await page.waitForSelector('.date')
 		const result = await page.evaluate(() => {
 			let url = document.location.href
 			let title = document.querySelector('.title-detail')?.textContent
 			let content = document.querySelector('.fck_detail')?.textContent
-			let contentArray = document.querySelectorAll('.Normal')
-			let contentArrayText: string[] = []
-			for (let i = 0; i < contentArray.length; i++) {
-				const text = contentArray[i].textContent
-				if (text !== null) {
-					contentArrayText.push(text)
+			let contentArray: string[] = []
+			// remove /n from content and then split on end of sentence, storing in array
+			if (content !== null) {
+				content = content!.replace(/\n/g, '')
+				contentArray = content.split('.')
+			}
+			// get date and parse it to just get the date
+			// example "Thứ hai, 8/5/2023, 15:58 (GMT+7)" -> "5/8/23"
+			let date = document.querySelector('.date')?.textContent
+			if (date !== null) {
+				// split by comma and strip whitespace
+				date = date!.split(',')[1].trim()
+				// format date to mm/dd/yy
+				const dateArray = date.split('/')
+				// pad 0 to single digit days and months
+				if (dateArray[0].length === 1) {
+					dateArray[0] = '0' + dateArray[0]
 				}
+				if (dateArray[1].length === 1) {
+					dateArray[1] = '0' + dateArray[1]
+				}
+				// remove first two digits from year
+				dateArray[2] = dateArray[2].slice(2)
+				date = `${dateArray[1]}/${dateArray[0]}/${dateArray[2]}`
 			}
 
 			return {
 				url,
 				title,
 				content,
-				contentArrayText,
+				contentArray,
+				date,
 			}
 		})
 		browser.close()
 
-		// translate the content contentArrayText to english and store in array
-		let translatedContentArrayText: string[] = []
-		for (let i = 0; i < result.contentArrayText.length; i++) {
-			const text = result.contentArrayText[i]
+		// translate title
+		const translatedTitle = await translate(result.title, {
+			from: 'vi',
+			to: 'en',
+		})
+
+		// translate contentArray to english and store in array
+		let translatedContentArray: string[] = []
+		for (let i = 0; i < result.contentArray.length; i++) {
+			const text = result.contentArray[i]
 			if (text !== null) {
 				const translatedText = await translate(text, {
 					from: 'vi',
 					to: 'en',
 				})
-				translatedContentArrayText.push(translatedText.text)
+				translatedContentArray.push(translatedText.text)
 			}
 		}
-		result.translatedContentArrayText = translatedContentArrayText
+
+		result.translatation = {
+			title: translatedTitle.text,
+			contentArray: translatedContentArray,
+		}
 
 		return result
 	} catch (error) {
