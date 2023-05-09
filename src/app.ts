@@ -1,6 +1,7 @@
 // for VN Express
 const puppeteer = require('puppeteer')
 const translate = require('@iamtraction/google-translate')
+const fs = require('fs')
 
 const url = 'https://vnexpress.net/topic/tp-ho-chi-minh-26483'
 // click the the div with class name: article-topstory
@@ -79,7 +80,7 @@ const scrape = async () => {
 			}
 		}
 
-		result.translatation = {
+		result.translation = {
 			title: translatedTitle.text,
 			contentArray: translatedContentArray,
 		}
@@ -92,4 +93,29 @@ const scrape = async () => {
 
 scrape().then(value => {
 	console.log(value)
+	// write to csv file
+
+	const safeDate = value.date.replace(/\//g, '-')
+
+	// create file if it doesn't exist
+	if (!fs.existsSync('./dist/data')) {
+		fs.mkdirSync('./dist/data')
+	}
+
+	// set char encoding to utf-8 windows-1258
+	// TODO: figure out how to get vietnamese characters to show up in csv
+	// TODO: figure out how to iterate through contentArray and write to csv
+	fs.writeFile(
+		`./dist/data/vnexpress_${safeDate}.csv`,
+
+		`url,title,content,date,translatedTitle,translatedContent\n${value.url},${value.title},${value.content},${value.date},${value.translation.title},${value.translation.contentArray}`,
+		{ encoding: 'utf-8', CharacterData: 'windows-1258' },
+		(err: Error) => {
+			if (err) {
+				console.log(err)
+			} else {
+				console.log('Success')
+			}
+		}
+	)
 })
