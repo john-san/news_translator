@@ -2,6 +2,10 @@
 const puppeteer = require('puppeteer')
 const translate = require('@iamtraction/google-translate')
 const fs = require('fs')
+const path = require('path')
+const createCsvWriter = require('csv-writer').createObjectCsvWriter
+
+const dataPath = path.resolve(__dirname, './data/')
 
 const url = 'https://vnexpress.net/topic/tp-ho-chi-minh-26483'
 // click the the div with class name: article-topstory
@@ -93,29 +97,62 @@ const scrape = async () => {
 
 scrape().then(value => {
 	console.log(value)
-	// write to csv file
+	writeToCsv(value)
+})
 
-	const safeDate = value.date.replace(/\//g, '-')
+type writeToCsvProps = {
+	url: string
+	title: string
+	content: string
+	contentArray: string[]
+	date: string
+	translation: {
+		title: string
+		contentArray: string[]
+	}
+}
 
-	// create file if it doesn't exist
-	if (!fs.existsSync('./dist/data')) {
-		fs.mkdirSync('./dist/data')
+function writeToCsv(jsData: writeToCsvProps): void {
+	// create folder if it doesn't exist
+	if (!fs.existsSync(dataPath)) {
+		fs.mkdirSync(dataPath)
 	}
 
-	// set char encoding to utf-8 windows-1258
-	// TODO: figure out how to get vietnamese characters to show up in csv
-	// TODO: figure out how to iterate through contentArray and write to csv
-	fs.writeFile(
-		`./dist/data/vnexpress_${safeDate}.csv`,
+	const safeDate = jsData.date.replace(/\//g, '-')
 
-		`url,title,content,date,translatedTitle,translatedContent\n${value.url},${value.title},${value.content},${value.date},${value.translation.title},${value.translation.contentArray}`,
-		{ encoding: 'utf-8', CharacterData: 'windows-1258' },
-		(err: Error) => {
-			if (err) {
-				console.log(err)
-			} else {
-				console.log('Success')
-			}
+	// If you don't want to write a header line, don't give title to header elements and just give field IDs as a string.
+	// removing titles for now
+	const csvWriter = createCsvWriter({
+		path: `${dataPath}/vnexpress_${safeDate}.csv`,
+		header: [
+			'content',
+			'translation',
+			'title',
+			'translated_title',
+			'date',
+			'url',
+		],
+	})
+
+	const baseData = {
+		title: jsData.title,
+		translated_title: jsData.translation.title,
+		date: jsData.date,
+		url: jsData.url,
+	}
+
+	// map through contentArray and translation.contentArray
+	const data = jsData.contentArray.map((content: string, index: number) => {
+		return {
+			content: content,
+			translation: jsData.translation.contentArray[index],
+			...baseData,
 		}
-	)
-})
+	})
+
+	// write to csv
+	csvWriter
+		.writeRecords(data)
+		.then(() => console.log('The CSV file was written successfully'))
+		.catch((err: Error) => console.log(err))
+}
