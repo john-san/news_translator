@@ -1,12 +1,6 @@
 // for VN Express
-const puppeteer = require('puppeteer')
-const translate = require('@iamtraction/google-translate')
-const fs = require('fs')
-const path = require('path')
-const createCsvWriter = require('csv-writer').createObjectCsvWriter
-
-const dataPath = path.resolve(__dirname, './data/')
-
+import puppeteer from 'puppeteer'
+import getVocab from './getVocab'
 const url = 'https://vnexpress.net/topic/tp-ho-chi-minh-26483'
 // click the the div with class name: article-topstory
 // get the url of the article
@@ -15,7 +9,7 @@ const url = 'https://vnexpress.net/topic/tp-ho-chi-minh-26483'
 // look for span tag with class name: date
 // save the contents to a csv file
 
-const scrape = async () => {
+const scrape = async (): Promise<any> => {
 	try {
 		const browser = await puppeteer.launch({ headless: 'new' })
 		const page = await browser.newPage()
@@ -65,30 +59,6 @@ const scrape = async () => {
 		})
 		browser.close()
 
-		// translate title
-		const translatedTitle = await translate(result.title, {
-			from: 'vi',
-			to: 'en',
-		})
-
-		// translate contentArray to english and store in array
-		let translatedContentArray: string[] = []
-		for (let i = 0; i < result.contentArray.length; i++) {
-			const text = result.contentArray[i]
-			if (text !== null) {
-				const translatedText = await translate(text, {
-					from: 'vi',
-					to: 'en',
-				})
-				translatedContentArray.push(translatedText.text)
-			}
-		}
-
-		result.translation = {
-			title: translatedTitle.text,
-			contentArray: translatedContentArray,
-		}
-
 		return result
 	} catch (error) {
 		console.log(error)
@@ -97,62 +67,5 @@ const scrape = async () => {
 
 scrape().then(value => {
 	console.log(value)
-	writeToCsv(value)
+	getVocab(value?.content).then(value => console.log(value))
 })
-
-type writeToCsvProps = {
-	url: string
-	title: string
-	content: string
-	contentArray: string[]
-	date: string
-	translation: {
-		title: string
-		contentArray: string[]
-	}
-}
-
-function writeToCsv(jsData: writeToCsvProps): void {
-	// create folder if it doesn't exist
-	if (!fs.existsSync(dataPath)) {
-		fs.mkdirSync(dataPath)
-	}
-
-	const safeDate = jsData.date.replace(/\//g, '-')
-
-	// If you don't want to write a header line, don't give title to header elements and just give field IDs as a string.
-	// removing titles for now
-	const csvWriter = createCsvWriter({
-		path: `${dataPath}/vnexpress_${safeDate}.csv`,
-		header: [
-			'content',
-			'translation',
-			'title',
-			'translated_title',
-			'date',
-			'url',
-		],
-	})
-
-	const baseData = {
-		title: jsData.title,
-		translated_title: jsData.translation.title,
-		date: jsData.date,
-		url: jsData.url,
-	}
-
-	// map through contentArray and translation.contentArray
-	const data = jsData.contentArray.map((content: string, index: number) => {
-		return {
-			content: content,
-			translation: jsData.translation.contentArray[index],
-			...baseData,
-		}
-	})
-
-	// write to csv
-	csvWriter
-		.writeRecords(data)
-		.then(() => console.log('The CSV file was written successfully'))
-		.catch((err: Error) => console.log(err))
-}
