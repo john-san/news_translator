@@ -29,13 +29,46 @@ export default async function getVocab(content: string): Promise<Vocab[]> {
 		counter++
 	}
 
+	// if vocabArray is still empty, return empty array
+	if (vocabArray.length == 0) {
+		console.log('Still no vocab. Returning empty array.')
+		return []
+	}
+
+	// try to get example sentences
+	counter = 1
+	let sentenceArray: Vocab[] = []
+	while (vocabArray[0].example == undefined && counter < 6) {
+		console.log(`Didn't get example sentences. Re-attempt ${counter}`)
+		// follow up question
+		question = `I didn't get any example sentences. Please try again. Please give me flashcards for key terms from the previous Vietnamese text in an array of objects: [{VN: "vietnamese word", example: "example sentence", original: "original sentence from text" },...]`
+		res = await api.sendMessage(question, {
+			parentMessageId: res.id,
+		})
+		sentenceArray = parseVocabArray(res.text)
+		counter++
+	}
+
+	// merge vocabArray and sentenceArray
+	if (sentenceArray.length > 0) {
+		vocabArray = vocabArray.map((vocab, index) => {
+			return {
+				...vocab,
+				example: sentenceArray[index].example,
+				original: sentenceArray[index].original,
+			}
+		})
+	}
+
 	return vocabArray
 }
 
 type Vocab = {
 	vietnamese: string
-	english: string
-	rootWords: string
+	english?: string
+	rootWords?: string
+	example?: string
+	original?: string
 }
 
 function parseVocabArray(text: string): Vocab[] {
