@@ -17,6 +17,7 @@ export default async function getVocab(content: string): Promise<Vocab[]> {
 	// if vocabArray is empty, ask again
 	let counter = 1
 	while (vocabArray.length == 0 && counter < 6) {
+		await sleep(20)
 		console.log(
 			`Didn't get array of vocab. asking again. Re-attempt ${counter}`
 		)
@@ -39,6 +40,7 @@ export default async function getVocab(content: string): Promise<Vocab[]> {
 	counter = 1
 	let sentenceArray: Vocab[] = []
 	while (vocabArray[0].example == undefined && counter < 6) {
+		await sleep(20)
 		console.log(`Didn't get example sentences. Re-attempt ${counter}`)
 		// follow up question
 		question = `I didn't get any example sentences. Please try again. Please give me flashcards for key terms from the previous Vietnamese text in an array of objects: [{VN: "vietnamese word", example: "example sentence", original: "original sentence from text" },...]`
@@ -79,15 +81,24 @@ function parseVocabArray(text: string): Vocab[] {
 	console.log('start:', start)
 	console.log('end:', end)
 
-	let json = text.substring(start, end + 1)
-	// trim json to remove any extra whitespace
-	json = json.trim()
-	try {
-		const parsedJson: Vocab[] = JSON.parse(json)
-		console.log('parsedJson:', parsedJson)
-		return parsedJson
-	} catch (error) {
-		console.error('Error parsing JSON:', error)
-		return []
+	// if both '[' and ']' exist, parse json
+	if (start != -1 && end != -1) {
+		let json = text.substring(start, end + 1)
+		console.log('json:', json)
+		// trim json to remove any extra whitespace
+		json = JSON.parse(json)
+		try {
+			const parsedJson: Vocab[] = JSON.parse(json)
+			console.log('parsedJson:', parsedJson)
+			return parsedJson
+		} catch (error) {
+			console.error('Error parsing JSON:', error)
+		}
 	}
+	return []
+}
+
+// async pause function that accepts seconds
+async function sleep(seconds: number): Promise<void> {
+	return new Promise(resolve => setTimeout(resolve, seconds * 1000))
 }
