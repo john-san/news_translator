@@ -8,8 +8,9 @@ export default async function getVocab(content: string): Promise<Vocab[]> {
 	})
 	//const sampleContent =
 	// 'Thông tin được ông Lương Minh Phúc, Giám đốc Ban quản lý dự án đầu tư xây dựng các công trình giao thông TP HCM (TCIP - chủ đầu tư dự án xây lắp trên địa bàn thành phố), cho biết chiều 11/5, sau khi tổ công tác vật liệu liên tỉnh tuyến Vành đai 3 cung cấp số liệu. UBND thành phố là cơ quan điều phối chung dự án.'
-
-	let question = `From the following text, can you provide me with flashcards for important words to understand the text that contain: 1) The Vietnamese word, 2) the English translation, 3) root words : ${content}. Please give me the flashcards in an array of objects: [{VN: "vietnamese word", EN: "english translation", rootWords: "root word 1(translation), root ward 2(translation),..."},...]`
+	let number = 20
+	console.log('Asking ChatGPT for vocab.')
+	let question = `From the following text, can you provide me with ${number} flashcards for important words to understand the text that contain: 1) The Vietnamese word, 2) the English translation, 3) root words : ${content}. Please give me the flashcards in an array of objects: [{"VN": "vietnamese word", "EN": "english translation", rootWords: "root word 1(translation), root ward 2(translation),..."},...]`
 
 	let res = await api.sendMessage(question)
 	let vocabArray = parseVocabArray(res.text)
@@ -22,7 +23,7 @@ export default async function getVocab(content: string): Promise<Vocab[]> {
 			`Didn't get array of vocab. asking again. Re-attempt ${counter}`
 		)
 		// follow up question
-		question = `I didn't get any vocab. Please try again. Please give me flashcards for key terms from the previous Vietnamese text in an array of objects: [{VN: "vietnamese word", EN: "english translation", rootWords: "root word 1(translation), root ward 2(translation),..."},...]`
+		question = `I didn't get an array of objects. Please try again. Please give me ${number} flashcards for key terms from the previous Vietnamese text in an array of objects: [{"VN": "vietnamese word", "EN": "english translation", "rootWords": "root word 1(translation), root ward 2(translation),..."},...]`
 		res = await api.sendMessage(question, {
 			parentMessageId: res.id,
 		})
@@ -37,30 +38,30 @@ export default async function getVocab(content: string): Promise<Vocab[]> {
 	}
 
 	// try to get example sentences
-	counter = 1
-	let sentenceArray: Vocab[] = []
-	while (vocabArray[0].example == undefined && counter < 6) {
-		await sleep(20)
-		console.log(`Didn't get example sentences. Re-attempt ${counter}`)
-		// follow up question
-		question = `I didn't get any example sentences. Please try again. Please give me flashcards for key terms from the previous Vietnamese text in an array of objects: [{VN: "vietnamese word", example: "example sentence", original: "original sentence from text" },...]`
-		res = await api.sendMessage(question, {
-			parentMessageId: res.id,
-		})
-		sentenceArray = parseVocabArray(res.text)
-		counter++
-	}
+	// counter = 1
+	// let sentenceArray: Vocab[] = []
+	// while (vocabArray[0].example == undefined && counter < 6) {
+	// 	await sleep(20)
+	// 	console.log(`Didn't get example sentences. Re-attempt ${counter}`)
+	// 	// follow up question
+	// 	question = `I didn't get any example sentences. Please try again. Please give me flashcards for key terms from the previous Vietnamese text in an array of objects: [{VN: "vietnamese word", example: "example sentence", original: "original sentence from text" },...]`
+	// 	res = await api.sendMessage(question, {
+	// 		parentMessageId: res.id,
+	// 	})
+	// 	sentenceArray = parseVocabArray(res.text)
+	// 	counter++
+	// }
 
-	// merge vocabArray and sentenceArray
-	if (sentenceArray.length > 0) {
-		vocabArray = vocabArray.map((vocab, index) => {
-			return {
-				...vocab,
-				example: sentenceArray[index].example,
-				original: sentenceArray[index].original,
-			}
-		})
-	}
+	// // merge vocabArray and sentenceArray
+	// if (sentenceArray.length > 0) {
+	// 	vocabArray = vocabArray.map((vocab, index) => {
+	// 		return {
+	// 			...vocab,
+	// 			example: sentenceArray[index].example,
+	// 			original: sentenceArray[index].original,
+	// 		}
+	// 	})
+	// }
 
 	return vocabArray
 }
@@ -74,8 +75,10 @@ type Vocab = {
 }
 
 function parseVocabArray(text: string): Vocab[] {
-	const start = text.indexOf('[') // find index of first '['
-	const end = text.lastIndexOf(']') // find index of last ']'
+	// strip text of all newlines
+	text = text.replace(/\n/g, '')
+	let start = text.indexOf('[') // find index of first '['
+	let end = text.lastIndexOf(']') // find index of last ']'
 
 	console.log('text:', text)
 	console.log('start:', start)
@@ -85,8 +88,6 @@ function parseVocabArray(text: string): Vocab[] {
 	if (start != -1 && end != -1) {
 		let json = text.substring(start, end + 1)
 		console.log('json:', json)
-		// trim json to remove any extra whitespace
-		json = JSON.parse(json)
 		try {
 			const parsedJson: Vocab[] = JSON.parse(json)
 			console.log('parsedJson:', parsedJson)
