@@ -67,5 +67,5 @@ const scrape = async (): Promise<any> => {
 
 scrape().then(value => {
 	console.log(value)
-	getVocab(value?.content, 60).then(value => console.log(value))
+	getVocab(value?.content, 30).then(value => console.log(value))
 })
