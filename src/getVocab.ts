@@ -58,7 +58,11 @@ export default async function getVocab(
 		// decrement remaining by CHUNK_SIZE. If remaining is less than CHUNK_SIZE, it is on the last iteration, so set remaining to 0
 		remaining = remaining >= CHUNK_SIZE ? remaining - CHUNK_SIZE : 0
 	}
-	console.log('result.length: ', result.length)
+	// truncate result to num just in case result is greater than num. ChatGPT sometimes provides +1 additional result
+	result = result.slice(0, num)
+
+	console.log('result.length:', result.length)
+
 	return result
 }
 
@@ -66,8 +70,7 @@ type Vocab = {
 	vietnamese: string
 	english?: string
 	rootWords?: string
-	example?: string
-	original?: string
+	sentence?: string
 }
 
 function parseVocabArray(text: string): Vocab[] {
@@ -83,8 +86,8 @@ function parseVocabArray(text: string): Vocab[] {
 	// if both '[' and ']' exist, parse json
 	if (start != -1 && end != -1) {
 		let json = text.substring(start, end + 1)
-		// remove trailing comma from json string
 		json = removeTrailingComma(json)
+		// remove trailing comma from json string
 		// console.log('json:', json)
 		try {
 			const parsedJson: Vocab[] = JSON.parse(json)
@@ -99,7 +102,7 @@ function parseVocabArray(text: string): Vocab[] {
 
 // async pause function that accepts seconds
 async function sleep(seconds: number): Promise<void> {
-	return new Promise(resolve => setTimeout(resolve, seconds * 1000))
+	return new Promise((resolve) => setTimeout(resolve, seconds * 1000))
 }
 
 // remove trailing comma from json string

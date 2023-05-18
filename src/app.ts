@@ -65,7 +65,14 @@ const scrape = async (): Promise<any> => {
 	}
 }
 
-scrape().then(value => {
+scrape().then((value) => {
 	console.log(value)
-	getVocab(value?.content, 30).then(value => console.log(value))
+	getVocab(value?.content, 30).then((value) => console.log(value))
+
+	/* 
+	  TODOS
+		1) Tokenize content into sentences
+		2) Translate each sentence
+		3) Write sentences and words to 2 CSVs
+	*/
 })
