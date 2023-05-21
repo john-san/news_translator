@@ -1,7 +1,7 @@
 // for VN Express
 import puppeteer from 'puppeteer'
-// import getVocab from './getVocab'
-import { sentences } from 'sbd'
+import getVocab from './getVocab'
+import getEasySentences from './getEasySentences'
 import { parseDate } from './utils'
 
 const url = 'https://vnexpress.net/topic/tp-ho-chi-minh-26483'
@@ -24,11 +24,10 @@ const scrape = async (): Promise<any> => {
 		await page.waitForSelector('.date')
 		const result = await page.evaluate(() => {
 			let url = document.location.href
-			let title = document.querySelector('.title-detail')?.textContent
-			let content = document.querySelector('.fck_detail')?.textContent
-			// remove newlines
-			content = content?.replace(/\n/g, ' ')
-
+			let title = document.querySelector('.title-detail')?.textContent?.trim()
+			let content = document.querySelector('.fck_detail')?.textContent?.trim()
+			// remove newlines and tabs
+			content = content?.replace(/\n|\t/g, '')
 			let date = document.querySelector('.date')?.textContent
 
 			return {
@@ -50,14 +49,12 @@ async function scrapeAndProcess() {
 	const result = await scrape()
 	result.date = parseDate(result?.date)
 	console.log(result)
-	// tokenize content
 
-	let parseOptions = {
-		sanitize: true,
-		preserve_whitespace: false,
-	}
-	const content = sentences(result.content, parseOptions)
-	console.log(content)
+	let vocab = await getVocab(result.content)
+	console.log(vocab)
+
+	let sentences = await getEasySentences(result.content)
+	console.log(sentences)
 }
 
 scrapeAndProcess()

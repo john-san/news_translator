@@ -1,22 +1,22 @@
-const translate = require('@iamtraction/google-translate')
+import translate from '@iamtraction/google-translate'
 
 export async function translateSentences(
-	contentArray: string[]
+	sentences: string[]
 ): Promise<string[]> {
-	// translate contentArray to english and store in array
-	let translatedContentArray: string[] = []
-	for (let i = 0; i < contentArray.length; i++) {
-		const text = contentArray[i]
+	// translate sentences to english and store in array
+	let translations: string[] = []
+	for (let i = 0; i < sentences.length; i++) {
+		const text = sentences[i]
 		if (text !== null) {
 			const translatedText = await translate(text, {
 				from: 'vi',
 				to: 'en',
 			})
-			translatedContentArray.push(translatedText.text)
+			translations.push(translatedText.text)
 		}
 	}
 
-	return translatedContentArray
+	return translations
 }
 
 export async function translateString(s: string): Promise<string> {

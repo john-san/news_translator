@@ -1,35 +1,37 @@
 import { ChatGPTAPI } from 'chatgpt'
 import dotenv from 'dotenv'
 dotenv.config()
+import { translateString } from './translateSentences'
 import { sleep, parseJson } from './utils'
 
-type Vocab = {
-	vietnamese: string
-	english?: string
-	rootWords?: string
+type Sentence = {
+	VN: string
+	EN: string
 }
 
-export default async function getVocab(
+export default async function getEasySentences(
 	content: string,
 	num: number = 20
-): Promise<Vocab[]> {
+): Promise<Sentence[]> {
 	const api = new ChatGPTAPI({
 		apiKey: process.env.CHATGPT_API_KEY ?? '',
 	})
-	// if num is greater than 20, ask for 20 at a time until num is less than 20
-	let result: Vocab[] = []
-	let tempArray: Vocab[] = []
+	// if num is greater than CHUNK_SIZE, ask for CHUNK_SIZE at a time until num is less than CHUNK_SIZE
+	let result: string[] = []
+	let tempArray: string[] = []
 
-	let CHUNK_SIZE = 20
+	let CHUNK_SIZE = 10
 	let remaining = num
 	let parentMessageId: string | undefined = ''
 
 	while (remaining > 0) {
 		let numToAskFor = remaining >= CHUNK_SIZE ? CHUNK_SIZE : remaining
-		console.log(`Asking ChatGPT for ${remaining == num ? '' : 'more '}vocab.`)
+		console.log(
+			`Asking ChatGPT for ${remaining == num ? '' : 'more '}sentences.`
+		)
 		let question = `From the following text, can you provide me with ${numToAskFor} ${
 			remaining == num ? '' : 'NEW(not given previously)'
-		} flashcards for important words to understand the text that contain: 1) The Vietnamese word, 2) the English translation, 3) root words : ${content}. Please give me the flashcards in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", rootWords: "VN root word 1(EN translation), VN root word 2(EN translation),..."},...]`
+		} easy vietnamese sentences to understand the text in an array?: ["easy vietnamese sentence",...]. Here is the text: ${content}`
 
 		let res = await api.sendMessage(question, { parentMessageId })
 		tempArray = parseJson(res.text)
@@ -38,15 +40,15 @@ export default async function getVocab(
 		let counter = 1
 		while (tempArray.length == 0 && counter < 6) {
 			console.log(
-				`Didn't get an array of vocab. Will ask again after 10 second cooldown. Retries left: ${
+				`Didn't get array of sentences. Will ask again after 10 second cooldown. Retries left: ${
 					6 - counter
 				}`
 			)
 			await sleep(10)
 			// follow up question
-			question = `I didn't get an array of objects in valid JSON format. Please try again. Please give me ${numToAskFor} ${
+			question = `I didn't get an array of sentences. Please give me ${numToAskFor} ${
 				remaining == num ? '' : 'NEW(not given previously)'
-			} flashcards for key terms from the previous Vietnamese text in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", "rootWords": "VN root word 1(EN translation), VN root word 2(EN translation),..."},...]`
+			} easy sentences to understand previous Vietnamese text in an array ["easy vietnamese sentence",...].`
 			res = await api.sendMessage(question, {
 				parentMessageId: res.id,
 			})
@@ -58,7 +60,7 @@ export default async function getVocab(
 			counter++
 		}
 
-		console.log('Successfully retrieved vocab for this iteration.')
+		console.log('Successfully retrieved sentences for this iteration.')
 
 		// merge tempArray with result
 		result = result.concat(tempArray)
@@ -70,5 +72,19 @@ export default async function getVocab(
 
 	console.log('result.length:', result.length)
 
-	return result
+	// map result to object with VN and EN
+	console.log('Translating sentences to english...')
+	let sentences: Sentence[] = []
+	for (let i = 0; i < result.length; i++) {
+		const text = result[i]
+		if (text !== null) {
+			const translatedText = await translateString(text)
+			sentences.push({
+				VN: text,
+				EN: translatedText,
+			})
+		}
+	}
+
+	return sentences
 }
