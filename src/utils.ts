@@ -1,7 +1,7 @@
 export function parseDate(date: string): string | null {
 	// get date and parse it to just get the date
 	// example "Thứ hai, 8/5/2023, 15:58 (GMT+7)" -> "5/8/23"
-	if (date !== null) {
+	try {
 		// split by comma and strip whitespace
 		date = date!.split(',')[1].trim()
 		// format date to mm/dd/yy
@@ -16,8 +16,11 @@ export function parseDate(date: string): string | null {
 		// remove first two digits from year
 		dateArray[2] = dateArray[2].slice(2)
 		date = `${dateArray[1]}/${dateArray[0]}/${dateArray[2]}`
+		return date
+	} catch (error) {
+		console.error('Error parsing date:', error)
+		return null
 	}
-	return date
 }
 
 // async pause function that accepts seconds

@@ -31,7 +31,7 @@ export default async function getEasySentences(
 		)
 		let question = `From the following text, can you provide me with ${numToAskFor} ${
 			remaining == num ? '' : 'NEW(not given previously)'
-		} easy vietnamese sentences to understand the text in an array?: ["easy vietnamese sentence",...]. Here is the text: ${content}`
+		} easy vietnamese sentences to understand the text in an array in valid JSON format?: ["easy vietnamese sentence",...]. Here is the text: ${content}`
 
 		let res = await api.sendMessage(question, { parentMessageId })
 		tempArray = parseJson(res.text)
@@ -48,7 +48,7 @@ export default async function getEasySentences(
 			// follow up question
 			question = `I didn't get an array of sentences. Please give me ${numToAskFor} ${
 				remaining == num ? '' : 'NEW(not given previously)'
-			} easy sentences to understand previous Vietnamese text in an array ["easy vietnamese sentence",...].`
+			} easy sentences to understand previous Vietnamese text in an array in valid JSON format?: ["easy vietnamese sentence",...].`
 			res = await api.sendMessage(question, {
 				parentMessageId: res.id,
 			})

@@ -26,9 +26,9 @@ const scrape = async (): Promise<any> => {
 			let url = document.location.href
 			let title = document.querySelector('.title-detail')?.textContent?.trim()
 			let content = document.querySelector('.fck_detail')?.textContent?.trim()
-			// remove newlines and tabs
-			content = content?.replace(/\n|\t/g, '')
 			let date = document.querySelector('.date')?.textContent
+			// remove newlines and tabs from content
+			content = content?.replace(/\n|\t/g, '')
 
 			return {
 				url,
@@ -48,13 +48,14 @@ const scrape = async (): Promise<any> => {
 async function scrapeAndProcess() {
 	const result = await scrape()
 	result.date = parseDate(result?.date)
+
 	console.log(result)
 
-	let vocab = await getVocab(result.content)
-	console.log(vocab)
+	result.vocab = await getVocab(result.content)
+	console.log(result.vocab)
 
-	let sentences = await getEasySentences(result.content)
-	console.log(sentences)
+	result.sentences = await getEasySentences(result.content)
+	console.log(result.sentences)
 }
 
 scrapeAndProcess()

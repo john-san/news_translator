@@ -4,9 +4,9 @@ dotenv.config()
 import { sleep, parseJson } from './utils'
 
 type Vocab = {
-	vietnamese: string
-	english?: string
-	rootWords?: string
+	VN: string
+	EN: string
+	roots: string
 }
 
 export default async function getVocab(
@@ -29,7 +29,7 @@ export default async function getVocab(
 		console.log(`Asking ChatGPT for ${remaining == num ? '' : 'more '}vocab.`)
 		let question = `From the following text, can you provide me with ${numToAskFor} ${
 			remaining == num ? '' : 'NEW(not given previously)'
-		} flashcards for important words to understand the text that contain: 1) The Vietnamese word, 2) the English translation, 3) root words : ${content}. Please give me the flashcards in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", rootWords: "VN root word 1(EN translation), VN root word 2(EN translation),..."},...]`
+		} flashcards for important words to understand the text that contain: 1) The Vietnamese word, 2) the English translation, 3) root words : ${content}. Please give me the flashcards in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", "roots": "VN root1(EN translation), VN root2(EN translation)..."},...]`
 
 		let res = await api.sendMessage(question, { parentMessageId })
 		tempArray = parseJson(res.text)
@@ -46,7 +46,7 @@ export default async function getVocab(
 			// follow up question
 			question = `I didn't get an array of objects in valid JSON format. Please try again. Please give me ${numToAskFor} ${
 				remaining == num ? '' : 'NEW(not given previously)'
-			} flashcards for key terms from the previous Vietnamese text in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", "rootWords": "VN root word 1(EN translation), VN root word 2(EN translation),..."},...]`
+			} flashcards for key terms from the previous Vietnamese text in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", "roots": "VN root1(EN translation), VN root2(EN translation),..."},...]`
 			res = await api.sendMessage(question, {
 				parentMessageId: res.id,
 			})
