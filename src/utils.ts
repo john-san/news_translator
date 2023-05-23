@@ -15,7 +15,7 @@ export function parseDate(date: string): string | null {
 		}
 		// remove first two digits from year
 		dateArray[2] = dateArray[2].slice(2)
-		date = `${dateArray[1]}/${dateArray[0]}/${dateArray[2]}`
+		date = `${dateArray[1]}-${dateArray[0]}-${dateArray[2]}`
 		return date
 	} catch (error) {
 		console.error('Error parsing date:', error)

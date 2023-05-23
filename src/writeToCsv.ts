@@ -1,61 +1,84 @@
-const path = require('path')
-const fs = require('fs')
-const createCsvWriter = require('csv-writer').createObjectCsvWriter
-const dataPath = path.resolve(__dirname, './data/')
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+import fs from 'fs'
+import { createObjectCsvWriter as createCsvWriter } from 'csv-writer'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const dataPath = `${__dirname}\\data\\`
 
 type writeToCsvProps = {
 	url: string
 	title: string
 	content: string
-	contentArray: string[]
 	date: string
-	translation: {
-		title: string
-		contentArray: string[]
-	}
+	vocab: {
+		VN: string
+		EN: string
+		roots: string
+	}[]
+	sentences: {
+		VN: string
+		EN: string
+	}[]
 }
 
-function writeToCsv(jsData: writeToCsvProps): void {
+function writeToCsv({
+	url,
+	title,
+	date,
+	vocab,
+	sentences,
+}: writeToCsvProps): void {
 	// create folder if it doesn't exist
 	if (!fs.existsSync(dataPath)) {
 		fs.mkdirSync(dataPath)
 	}
 
-	const safeDate = jsData.date.replace(/\//g, '-')
-
 	// If you don't want to write a header line, don't give title to header elements and just give field IDs as a string.
 	// removing titles for now
-	const csvWriter = createCsvWriter({
-		path: `${dataPath}/vnexpress_${safeDate}.csv`,
-		header: [
-			'content',
-			'translation',
-			'title',
-			'translated_title',
-			'date',
-			'url',
-		],
+	let csvWriter = createCsvWriter({
+		path: `${dataPath}/vnexpress_${date}_vocab.csv`,
+		header: ['VN_word', 'EN_word', 'roots', 'title', 'date', 'url'],
 	})
 
 	const baseData = {
-		title: jsData.title,
-		translated_title: jsData.translation.title,
-		date: jsData.date,
-		url: jsData.url,
+		title,
+		date,
+		url,
 	}
 
-	// map through contentArray and translation.contentArray
-	const data = jsData.contentArray.map((content: string, index: number) => {
+	const vocabData = vocab.map((word) => {
 		return {
-			content: content,
-			translation: jsData.translation.contentArray[index],
+			VN_word: word.VN,
+			EN_word: word.EN,
+			roots: word.roots,
 			...baseData,
 		}
 	})
 
-	// write to csv
 	csvWriter
-		.writeRecords(data)
-		.then(() => console.log('The CSV file was written successfully'))
+		.writeRecords(vocabData)
+		.then(() => console.log('The vocab CSV file was written successfully'))
+		.catch((err: Error) => console.log(err))
+
+	csvWriter = createCsvWriter({
+		path: `${dataPath}/vnexpress_${date}_sentences.csv`,
+		header: ['VN_sentence', 'EN_sentence', 'title', 'date', 'url'],
+	})
+
+	const sentencesData = sentences.map((sentence) => {
+		return {
+			VN_sentence: sentence.VN,
+			EN_sentence: sentence.EN,
+			...baseData,
+		}
+	})
+
+	csvWriter
+		.writeRecords(sentencesData)
+		.then(() => console.log('The sentences CSV file was written successfully'))
 		.catch((err: Error) => console.log(err))
 }
+
+export default writeToCsv

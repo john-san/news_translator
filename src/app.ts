@@ -3,6 +3,7 @@ import puppeteer from 'puppeteer'
 import getVocab from './getVocab'
 import getEasySentences from './getEasySentences'
 import { parseDate } from './utils'
+import writeToCsv from './writeToCsv'
 
 const url = 'https://vnexpress.net/topic/tp-ho-chi-minh-26483'
 // click the the div with class name: article-topstory
@@ -56,13 +57,8 @@ async function scrapeAndProcess() {
 
 	result.sentences = await getEasySentences(result.content)
 	console.log(result.sentences)
+
+	await writeToCsv(result)
 }
 
 scrapeAndProcess()
-
-/* 
-	  TODOS
-		1) Tokenize content into sentences
-		2) Translate each sentence
-		3) Write sentences and words to 2 CSVs
-	*/
