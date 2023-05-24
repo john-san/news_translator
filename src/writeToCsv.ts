@@ -40,6 +40,7 @@ function writeToCsv({
 	let csvWriter = createCsvWriter({
 		path: `${dataPath}/vnexpress_${date}_vocab.csv`,
 		header: ['VN_word', 'EN_word', 'roots', 'title', 'date', 'url'],
+		fieldDelimiter: ';',
 	})
 
 	const baseData = {
@@ -65,6 +66,7 @@ function writeToCsv({
 	csvWriter = createCsvWriter({
 		path: `${dataPath}/vnexpress_${date}_sentences.csv`,
 		header: ['VN_sentence', 'EN_sentence', 'title', 'date', 'url'],
+		fieldDelimiter: ';',
 	})
 
 	const sentencesData = sentences.map((sentence) => {

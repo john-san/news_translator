@@ -61,4 +61,9 @@ async function scrapeAndProcess() {
 	await writeToCsv(result)
 }
 
+/* TODO:
+- find way to automatically import files to anki
+- fix issue with npm start
+*/
+
 scrapeAndProcess()
