@@ -24,9 +24,21 @@ const scrape = async (): Promise<any> => {
       await page.waitForSelector("nav.main-nav");
 
       const topics = await page.evaluate(() => {
+        const excludedTopics = [
+          "",
+          "Video",
+          "Podcasts",
+          "Mới nhất",
+          "Thư giãn",
+          "Tất cả",
+        ];
         const topicLinks = Array.from(
           document.querySelectorAll("nav.main-nav > ul.parent > li > a")
-        );
+        ).filter((link) => {
+          const anchor = link as HTMLAnchorElement;
+          return !excludedTopics.includes(anchor.textContent!.trim());
+        });
+
         return topicLinks.map((link, index) => {
           const anchor = link as HTMLAnchorElement;
           return {
