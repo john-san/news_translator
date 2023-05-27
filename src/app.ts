@@ -1,9 +1,9 @@
 // for VN Express
 import puppeteer from "puppeteer";
-import readline from "readline";
 import getVocab from "./getVocab";
 import getEasySentences from "./getEasySentences";
-import { parseDate } from "./utils";
+import { translateString } from "./translateSentences";
+import { parseDate, promptForInput } from "./utils";
 import writeToCsv from "./writeToCsv";
 
 const scrape = async (): Promise<any> => {
@@ -12,16 +12,14 @@ const scrape = async (): Promise<any> => {
 
     const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
     let result: any = {};
-    // await page.goto(url)
 
     while (accepted == false) {
       await page.goto("https://vnexpress.net");
-      await page.waitForSelector("nav.main-nav");
+
+      /* Select Topic */
+
+      await page.waitForSelector("nav.main-nav > ul.parent > li > a");
 
       const topics = await page.evaluate(() => {
         const excludedTopics = [
@@ -30,6 +28,7 @@ const scrape = async (): Promise<any> => {
           "Podcasts",
           "Mới nhất",
           "Thư giãn",
+          "Tâm sự",
           "Tất cả",
         ];
         const topicLinks = Array.from(
@@ -50,31 +49,37 @@ const scrape = async (): Promise<any> => {
       });
 
       console.log("Pick a topic:");
-      topics.forEach((topic) => {
-        console.log(`${topic.index}. ${topic.name}`);
-      });
+      // for..of loop to iterate sequentially
+      const translations = await Promise.all(
+        topics.map((topic) => translateString(topic.name))
+      );
 
-      const topicIndex = await new Promise<number>((resolve) => {
-        rl.question(
-          "Enter the number of the topic you want to explore: ",
-          (topicIndex) => {
-            resolve(parseInt(topicIndex, 10));
-          }
-        );
-      });
-
-      const selectedTopic = topics.find((topic) => topic.index === topicIndex);
-      if (!selectedTopic) {
-        console.log("Invalid topic number. Exiting...");
-        rl.close();
-        await browser.close();
-        return;
+      for (let i = 0; i < topics.length; i++) {
+        const topic = topics[i];
+        const translation = translations[i];
+        console.log(`${topic.index}. ${topic.name} (${translation})`);
       }
 
-      console.log(`You selected "${selectedTopic.name}".`);
+      const selectedTopicIndex = await promptForInput(
+        "Enter the number of the topic you want to explore: ",
+        (input) => {
+          const index = parseInt(input, 10);
+          const selectedTopic = topics.find((topic) => topic.index === index);
+          return selectedTopic ? index : undefined;
+        }
+      );
 
-      await page.goto(selectedTopic.href);
-      await page.waitForSelector("ul.ul-nav-folder");
+      const selectedTopic = topics.find(
+        (topic) => topic.index === selectedTopicIndex
+      );
+
+      console.log(`You selected "${selectedTopic!.name}".`);
+
+      await page.goto(selectedTopic!.href);
+
+      /* Select Subtopic */
+
+      await page.waitForSelector("ul.ul-nav-folder > li a");
 
       const subtopics = await page.evaluate(() => {
         const subtopicLinks = Array.from(
@@ -91,35 +96,86 @@ const scrape = async (): Promise<any> => {
       });
 
       console.log("Pick a subtopic:");
-      subtopics.forEach((subtopic) => {
-        console.log(`${subtopic.index}. ${subtopic.name}`);
-      });
-
-      const subtopicIndex = await new Promise<number>((resolve) => {
-        rl.question(
-          "Enter the number of the subtopic you want to explore: ",
-          (subtopicIndex) => {
-            resolve(parseInt(subtopicIndex, 10));
-          }
+      // for..of loop to iterate sequentially
+      for (const subtopic of subtopics) {
+        console.log(
+          `${subtopic.index}. ${subtopic.name} (${await translateString(
+            subtopic.name
+          )})`
         );
-      });
+      }
+
+      const subtopicIndex = await promptForInput(
+        "Enter the number of the subtopic you want to explore: ",
+        (input) => {
+          const index = parseInt(input, 10);
+          const selectedSubtopic = subtopics.find(
+            (subtopic) => subtopic.index === index
+          );
+          return selectedSubtopic ? index : undefined;
+        }
+      );
 
       const selectedSubtopic = subtopics.find(
         (subtopic) => subtopic.index === subtopicIndex
       );
-      if (!selectedSubtopic) {
-        console.log("Invalid subtopic number. Exiting...");
-        rl.close();
-        await browser.close();
-        return;
+
+      console.log(`You selected "${selectedSubtopic!.name}".`);
+
+      await page.goto(selectedSubtopic!.href);
+
+      /* Select Article */
+
+      await page.waitForSelector(
+        "div.col-left.col-left-new.col-left-subfolder"
+      );
+      await page.waitForSelector("h2.title-news > a");
+
+      const articles = await page.evaluate(() => {
+        const articleLinks = Array.from(
+          document.querySelectorAll("h2.title-news > a")
+        );
+
+        return articleLinks.map((link, index) => {
+          const anchor = link as HTMLAnchorElement;
+          return {
+            index: index + 1,
+            name: anchor.textContent!.trim(),
+            href: anchor.href,
+          };
+        });
+      });
+
+      console.log("Pick an article:");
+      // for..of loop to iterate sequentially
+      for (const article of articles) {
+        console.log(
+          `${article.index}. ${article.name} (${await translateString(
+            article.name
+          )})`
+        );
       }
 
-      console.log(`You selected "${selectedSubtopic.name}".`);
+      const articleIndex = await promptForInput(
+        "Enter the number of the article you want to study: ",
+        (input) => {
+          const index = parseInt(input, 10);
+          const selectedArticle = articles.find(
+            (article) => article.index === index
+          );
+          return selectedArticle ? index : undefined;
+        }
+      );
 
-      await page.goto(selectedSubtopic.href);
+      const selectedArticle = articles.find(
+        (article) => article.index === articleIndex
+      );
 
-      await page.waitForSelector(".article-topstory");
-      await page.click(".article-topstory");
+      console.log(`You selected "${selectedArticle!.name}".`);
+
+      await page.goto(selectedArticle!.href);
+
+      // get url, title, content, date
       await page.waitForSelector(".title-detail");
       await page.waitForSelector(".fck_detail");
       await page.waitForSelector(".date");
@@ -131,9 +187,9 @@ const scrape = async (): Promise<any> => {
         let content = document
           .querySelector(".fck_detail")
           ?.textContent?.trim();
-        let date = document.querySelector(".date")?.textContent;
         // remove newlines and tabs from content
         content = content?.replace(/\n|\t/g, "");
+        let date = document.querySelector(".date")?.textContent;
 
         return {
           url,
@@ -144,12 +200,13 @@ const scrape = async (): Promise<any> => {
       });
 
       console.log("result:", result);
-      console.log("Do you want to study this article? (y/n)");
-      const answer = await new Promise<string>((resolve) => {
-        rl.question("Enter your answer: ", (answer) => {
-          resolve(answer);
-        });
-      });
+      const answer = await promptForInput(
+        "Do you want to study this article? (y/n)",
+        (input) => {
+          return input === "y" || input === "n" ? input : undefined;
+        }
+      );
+
       if (answer === "y") {
         console.log("Using the current article.");
         accepted = true;
@@ -157,7 +214,6 @@ const scrape = async (): Promise<any> => {
     }
 
     browser.close();
-    rl.close();
 
     return result;
   } catch (error) {
@@ -183,6 +239,7 @@ async function scrapeAndProcess() {
 /* TODO:
 - find way to automatically import files to anki
 - fix issue with npm start
+- truncate content and question to 4000 characters / 500 words due to chatgpt limits
 */
 
 scrapeAndProcess();
