@@ -50,14 +50,10 @@ const scrape = async (): Promise<any> => {
 
       console.log("Pick a topic:");
       // for..of loop to iterate sequentially
-      const translations = await Promise.all(
-        topics.map((topic) => translateString(topic.name))
-      );
-
-      for (let i = 0; i < topics.length; i++) {
-        const topic = topics[i];
-        const translation = translations[i];
-        console.log(`${topic.index}. ${topic.name} (${translation})`);
+      for (const topic of topics) {
+        console.log(
+          `${topic.index}. ${topic.name} (${await translateString(topic.name)})`
+        );
       }
 
       const selectedTopicIndex = await promptForInput(
@@ -239,7 +235,9 @@ async function scrapeAndProcess() {
 /* TODO:
 - find way to automatically import files to anki
 - fix issue with npm start
+- parse content to remove whitespace and css code
 - truncate content and question to 4000 characters / 500 words due to chatgpt limits
+- make promise faster
 */
 
 scrapeAndProcess();
