@@ -2,40 +2,37 @@ import { Page } from "puppeteer";
 import { promptForInput } from "./utils";
 import { translateString } from "./translateSentences";
 
-async function getItems(
-  page: Page,
-  selector: string,
-  excludedItems: string[]
-): Promise<any[]> {
-  await page.waitForSelector(selector);
-
-  const items = await page.evaluate((selector: string) => {
-    // get items and then filter out excluded items
-    const itemLinks = Array.from(document.querySelectorAll(selector)).filter(
-      (link) => {
-        const anchor = link as HTMLAnchorElement;
-        return !excludedItems.includes(anchor.textContent!.trim());
-      }
-    );
-
-    return itemLinks.map((link, index) => {
-      const anchor = link as HTMLAnchorElement;
-      return {
-        index: index + 1,
-        name: anchor.textContent!.trim(),
-        href: anchor.href,
-      };
-    });
-  }, selector);
-
-  return items;
-}
-
 async function selectItem(
   page: Page,
-  items: { index: number; name: string; href: string }[],
-  itemName: string
+  selector: string,
+  itemName: string,
+  excludedItems: string[] = []
 ) {
+  await page.waitForSelector(selector);
+
+  const items = await page.evaluate(
+    (selector: string, excludedItems: string[]) => {
+      // get items and then filter out excluded items
+      const itemLinks = Array.from(document.querySelectorAll(selector)).filter(
+        (link) => {
+          const anchor = link as HTMLAnchorElement;
+          return !excludedItems.includes(anchor.textContent!.trim());
+        }
+      );
+
+      return itemLinks.map((link, index) => {
+        const anchor = link as HTMLAnchorElement;
+        return {
+          index: index + 1,
+          name: anchor.textContent!.trim(),
+          href: anchor.href,
+        };
+      });
+    },
+    selector,
+    excludedItems
+  );
+
   console.log(`Pick a ${itemName}:`);
   // for..of loop to iterate sequentially
   for (const item of items) {
@@ -61,4 +58,4 @@ async function selectItem(
   await page.goto(selectedItem!.href);
 }
 
-export { getItems, selectItem };
+export { selectItem };
