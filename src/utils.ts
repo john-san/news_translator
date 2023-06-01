@@ -73,20 +73,24 @@ const promptForInput = async <T>(
     output: process.stdout,
   });
 
-  while (true) {
-    const input = await new Promise<string>((resolve) => {
-      rl.question(question, (input) => {
-        resolve(input);
+  try {
+    while (true) {
+      const input = await new Promise<string>((resolve) => {
+        rl.question(question, (input) => {
+          resolve(input);
+        });
       });
-    });
 
-    const validatedInput = validator(input);
-    if (validatedInput !== undefined) {
-      rl.close();
-      return validatedInput;
+      const validatedInput = validator(input);
+      if (validatedInput !== undefined) {
+        return validatedInput;
+      }
+
+      console.log("Invalid input. Please try again.");
     }
-
-    console.log("Invalid input. Please try again.");
+  } finally {
+    // close readline to prevent memory leak
+    rl.close();
   }
 };
 

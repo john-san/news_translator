@@ -33,13 +33,16 @@ async function selectItem(
     excludedItems
   );
 
+  // translate item names
+  const promises = items.map((item) => translateString(item.name));
+  const translatedStrings = await Promise.all(promises);
+
   console.log(`Pick a ${itemName}:`);
-  // for..of loop to iterate sequentially
-  for (const item of items) {
-    console.log(
-      `${item.index}. ${item.name} (${await translateString(item.name)})`
-    );
-  }
+
+  // Wait for all promises to resolve before logging translated strings
+  items.forEach((item, index) => {
+    console.log(`${index + 1}. ${item.name} (${translatedStrings[index]})`);
+  });
 
   const selectedItemIndex = await promptForInput(
     `Enter the number of the ${itemName} you want to explore: `,

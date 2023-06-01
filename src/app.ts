@@ -104,7 +104,6 @@ async function scrapeAndProcess() {
 /* TODO:
 - fix issue with npm start
 - find way to automatically import files to anki
-- make promise faster
 - parse content to remove whitespace and css code
 - truncate content and question to 4000 characters / 500 words due to chatgpt limits
 */
