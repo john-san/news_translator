@@ -10,12 +10,28 @@ async function addCSVToAnki(fileName: string) {
   const __dirname = dirname(__filename);
   const filePath = `${__dirname}/data/${fileName}`;
 
+  // check if fileName includes "vocab" or "sentences"
+  let headers: string[];
+  let deckName: string;
+  let modelName: string;
+  if (fileName.includes("vocab")) {
+    headers = ["VN_word", "EN_word", "roots", "title", "date", "url"];
+    deckName = "Tiếng Việt: Chung::Tin tức::Vocab";
+    modelName = "News-Vocab";
+  } else if (fileName.includes("sentences")) {
+    headers = ["VN_sentence", "EN_sentence", "title", "date", "url"];
+    deckName = "Tiếng Việt: Chung::Tin tức::Sentences";
+    modelName = "News-Sentences";
+  } else {
+    throw new Error("Invalid file name");
+  }
+
   // Read the CSV file
   fs.createReadStream(filePath)
     .pipe(
       csv({
         separator: ";",
-        headers: ["VN_word", "EN_word", "roots", "title", "date", "url"],
+        headers: headers,
         skipLines: 0,
       })
     )
@@ -25,23 +41,25 @@ async function addCSVToAnki(fileName: string) {
     })
     .on("end", async () => {
       // Iterate over the data array, destructuring each object
-      for (const { VN_word, EN_word, roots, title, date, url } of data) {
+      for (const row of data) {
+        // Create an empty object to store the field values
+        const fields: { [key: string]: string } = {};
+
+        // Map the header names to the corresponding field values
+        for (let i = 0; i < headers.length; i++) {
+          const header = headers[i];
+          fields[header] = row[header];
+        }
+
         // Prepare the payload to add the note to Anki
         const payload = {
           action: "addNote",
           version: 6,
           params: {
             note: {
-              deckName: "Tiếng Việt: Chung::Tin tức::Vocab",
-              modelName: "News-Vocab",
-              fields: {
-                VN_word,
-                EN_word,
-                roots,
-                title,
-                date,
-                url,
-              },
+              deckName,
+              modelName,
+              fields,
               options: {
                 allowDuplicate: true,
               },
@@ -61,5 +79,8 @@ async function addCSVToAnki(fileName: string) {
     });
 }
 
-// Call the function to add CSV data to Anki
-addCSVToAnki("vnexpress_06-02-23_vocab.csv");
+// Call the function to add CSV data to Anki.
+// addCSVToAnki("vnexpress_06-02-23_vocab.csv");
+// addCSVToAnki("vnexpress_06-02-23_sentences.csv");
+
+export default addCSVToAnki;
