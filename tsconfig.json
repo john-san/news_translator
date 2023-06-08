@@ -1,19 +1,19 @@
 {
-	"compilerOptions": {
-		"target": "es2017",
-		"module": "es2022",
-		"moduleResolution": "node",
-		"strict": true,
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"noImplicitReturns": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true
-	},
-	"ts-node": {
-		"esm": true,
-		"experimentalSpecifierResolution": "node"
-	},
-	"include": ["src"],
-	"exclude": ["node_modules", "dist"]
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

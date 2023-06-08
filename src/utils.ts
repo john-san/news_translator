@@ -76,7 +76,7 @@ const promptForInput = async <T>(
   try {
     while (true) {
       const input = await new Promise<string>((resolve) => {
-        rl.question(question, (input) => {
+        rl.question(question, (input: any) => {
           resolve(input);
         });
       });

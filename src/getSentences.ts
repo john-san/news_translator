@@ -1,19 +1,19 @@
 import { ChatGPTAPI } from "chatgpt";
 import dotenv from "dotenv";
 dotenv.config();
+import { translateString } from "./translateSentences";
 import { sleep, parseJson } from "./utils";
 
-type Vocab = {
+type Sentence = {
   VN: string;
   EN: string;
-  roots: string;
 };
 
-export default async function getVocab(
+export default async function getSentences(
   content: string,
-  num: number = 20,
+  num: number = 10,
   difficulty: "A1" | "A2" | "B1" | "B2" | "C1" | "C2" = "C1"
-): Promise<Vocab[]> {
+): Promise<Sentence[]> {
   const api = new ChatGPTAPI({
     apiKey: process.env.CHATGPT_API_KEY ?? "",
     completionParams: {
@@ -21,20 +21,28 @@ export default async function getVocab(
       temperature: 0.5, // lower = more conservative, deterministic text
     },
   });
-  // if num is greater than 20, ask for 20 at a time until num is less than 20
-  let result: Vocab[] = [];
-  let tempArray: Vocab[] = [];
+  // if num is greater than CHUNK_SIZE, ask for CHUNK_SIZE at a time until num is less than CHUNK_SIZE
+  let result: string[] = [];
+  let tempArray: string[] = [];
 
-  let CHUNK_SIZE = 20;
+  let CHUNK_SIZE = 10;
   let remaining = num;
   let parentMessageId: string | undefined = "";
 
   while (remaining > 0) {
     let numToAskFor = remaining >= CHUNK_SIZE ? CHUNK_SIZE : remaining;
-    console.log(`Asking ChatGPT for ${remaining == num ? "" : "more "}vocab.`);
+    let firstTimeAsking = remaining == num;
+    console.log(
+      `Asking ChatGPT for ${firstTimeAsking ? "" : "more "}sentences.`
+    );
     let question = `From the following text, can you provide me with ${numToAskFor} ${
-      remaining == num ? "" : "NEW(not given previously)"
-    } ${difficulty} level key terms to understand the text that contain: 1) The Vietnamese word, 2) the English translation, 3) root words : ${content}. Please give me the flashcards in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", "roots": "VN root1(EN translation), VN root2(EN translation)..."},...]`;
+      firstTimeAsking ? "" : "NEW(not given previously)"
+    } ${difficulty} level vietnamese sentences to understand the text in an array in valid JSON format?: ["vietnamese sentence",...].`;
+
+    // if first time asking, provide content
+    if (firstTimeAsking) {
+      content += ` Here is the content: ${content}`;
+    }
 
     // Todo: fix any type
     let res: any = await api.sendMessage(question, { parentMessageId });
@@ -44,15 +52,15 @@ export default async function getVocab(
     let counter = 1;
     while (tempArray.length == 0 && counter < 6) {
       console.log(
-        `Didn't get an array of vocab. Will ask again after 10 second cooldown. Retries left: ${
+        `Didn't get array of sentences. Will ask again after 10 second cooldown. Retries left: ${
           6 - counter
         }`
       );
       await sleep(10);
       // follow up question
-      question = `I didn't get an array of objects in valid JSON format. Please try again. Please give me ${numToAskFor} ${
+      question = `I didn't get an array of sentences. Please give me ${numToAskFor} ${
         remaining == num ? "" : "NEW(not given previously)"
-      } ${difficulty} level key terms from the previous Vietnamese text in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", "roots": "VN root1(EN translation), VN root2(EN translation),..."},...]`;
+      } ${difficulty} level sentences to understand the previously given Vietnamese text in an array in valid JSON format: ["vietnamese sentence",...].`;
       res = await api.sendMessage(question, {
         parentMessageId: res.id,
       });
@@ -64,7 +72,7 @@ export default async function getVocab(
       counter++;
     }
 
-    console.log("Successfully retrieved vocab for this iteration.");
+    console.log("Successfully retrieved sentences for this iteration.");
 
     // merge tempArray with result
     result = result.concat(tempArray);
@@ -76,11 +84,24 @@ export default async function getVocab(
 
   console.log("result.length:", result.length);
 
-  return result;
+  // map result to object with VN and EN
+  console.log("Translating sentences to english...");
+  let sentences: Sentence[] = [];
+  for (let i = 0; i < result.length; i++) {
+    const text = result[i];
+    if (text !== null) {
+      const translatedText = await translateString(text);
+      sentences.push({
+        VN: text,
+        EN: translatedText,
+      });
+    }
+  }
+
+  return sentences;
 }
 
 // test
-// Todo: create unit tests
 /*
 const testContent = `4
 Số hóaCông nghệĐời sống sốThứ năm, 8/6/2023, 14:39 (GMT+7)
@@ -106,6 +127,23 @@ Hiện TikTok vẫn là mạng xã hội gây nghiện nhiều nhất. Theo Data
 
 Do mới ra đời hai năm, TikTok Shop chỉ chiếm một phần nhỏ trong doanh thu 80 tỷ USD của ByteDance năm ngoái. Chỉ số GMV của nền tảng cũng thấp hơn nhiều so với mức 73,5 tỷ USD của Sea Limited. Tuy nhiên, theo giới chuyên gia, TikTok Shop nếu thành công có thể giúp ByteDance chứng minh mô hình bán hàng qua video ngắn đang trở nên phù hợp hơn với người dùng. Thậm chí, hình thức này có thể sớm đuổi kịp và vượt qua thói quen mua sắm trực tuyến truyền thống.`;
 */
-// getVocab(testContent, 20, "A1").then((res) => console.log("A1", res));
 
-// getVocab(testContent, 20, "C2").then((res) => console.log("C2", res));
+// B1
+// getSentences(testContent, 10, "B1").then((sentences) => {
+//   console.log(sentences);
+// });
+
+// B2
+// getSentences(testContent, 10, "B2").then((sentences) => {
+//   console.log(sentences);
+// });
+
+// C1
+// getSentences(testContent, 10, "C1").then((sentences) => {
+//   console.log(sentences);
+// });
+
+// C2
+// getSentences(testContent, 10, "C2").then((sentences) => {
+//   console.log(sentences);
+// });
