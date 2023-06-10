@@ -8,6 +8,9 @@ import axios from "axios";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const dataPath = `${__dirname}\\data\\`;
+// const filename = path.resolve(process.cwd(), __filename);
+// const __dirname = dirname(filename);
+// const dataPath = path.join(__dirname, "data");
 
 type writeToCsvProps = {
   url: string;
@@ -99,8 +102,8 @@ async function writeToCsv({
 
 async function addCsvToAnki(fileName: string) {
   const data: any[] = [];
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
+  // const __filename = fileURLToPath(import.meta.url);
+  // const __dirname = dirname(__filename);
   const filePath = `${__dirname}/data/${fileName}`;
 
   // check if fileName includes "vocab" or "sentences"
@@ -154,7 +157,7 @@ async function addCsvToAnki(fileName: string) {
               modelName,
               fields,
               options: {
-                allowDuplicate: true,
+                allowDuplicate: false,
               },
               tags: [],
             },

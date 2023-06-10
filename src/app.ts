@@ -2,7 +2,7 @@
 import puppeteer from "puppeteer";
 import { selectItem } from "./puppeteerHelpers";
 import getVocab from "./getVocab";
-import getEasySentences from "./getEasySentences";
+import getSentences from "./getSentences";
 import { parseDate, promptForInput } from "./utils";
 import writeToCsv from "./writeToCsv";
 
@@ -54,6 +54,8 @@ const scrape = async (): Promise<any> => {
           ?.textContent?.trim();
         // remove newlines and tabs from content
         content = content?.replace(/\n|\t/g, "");
+        // remove multiple spaces from content
+        content = content?.replace(/\s(\s+|\n+)/g, " ");
         let date = document.querySelector(".date")?.textContent;
 
         return {
@@ -67,7 +69,7 @@ const scrape = async (): Promise<any> => {
       console.log("result:", result);
       const answer = await promptForInput(
         "Do you want to study this article? (y/n)",
-        (input) => {
+        (input: any) => {
           return input === "y" || input === "n" ? input : undefined;
         }
       );
@@ -95,7 +97,7 @@ async function scrapeAndProcess() {
   result.vocab = await getVocab(result.content);
   console.log(result.vocab);
 
-  result.sentences = await getEasySentences(result.content);
+  result.sentences = await getSentences(result.content);
   console.log(result.sentences);
 
   await writeToCsv(result);

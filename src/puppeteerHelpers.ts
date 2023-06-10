@@ -34,26 +34,29 @@ async function selectItem(
   );
 
   // translate item names
-  const promises = items.map((item) => translateString(item.name));
+  // todo: fix any type
+  const promises = items.map((item: any) => translateString(item.name));
   const translatedStrings = await Promise.all(promises);
 
   console.log(`Pick a ${itemName}:`);
 
   // Wait for all promises to resolve before logging translated strings
-  items.forEach((item, index) => {
+  items.forEach((item: any, index: number) => {
     console.log(`${index + 1}. ${item.name} (${translatedStrings[index]})`);
   });
 
   const selectedItemIndex = await promptForInput(
     `Enter the number of the ${itemName} you want to explore: `,
-    (input) => {
+    (input: any) => {
       const index = parseInt(input, 10);
-      const selectedItem = items.find((item) => item.index === index);
+      const selectedItem = items.find((item: any) => item.index === index);
       return selectedItem ? index : undefined;
     }
   );
 
-  const selectedItem = items.find((item) => item.index === selectedItemIndex);
+  const selectedItem = items.find(
+    (item: any) => item.index === selectedItemIndex
+  );
 
   console.log(`You selected "${selectedItem!.name}".`);
 
