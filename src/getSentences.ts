@@ -11,7 +11,7 @@ type Sentence = {
 
 export default async function getSentences(
   content: string,
-  num: number = 10,
+  num: number = 20,
   difficulty: "A1" | "A2" | "B1" | "B2" | "C1" | "C2" = "C1"
 ): Promise<Sentence[]> {
   const api = new ChatGPTAPI({
