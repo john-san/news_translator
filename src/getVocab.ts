@@ -31,10 +31,11 @@ export default async function getVocab(
 
   while (remaining > 0) {
     let numToAskFor = remaining >= CHUNK_SIZE ? CHUNK_SIZE : remaining;
-    console.log(`Asking ChatGPT for ${remaining == num ? "" : "more "}vocab.`);
+    let firstTimeAsking = remaining == num;
+    console.log(`Asking ChatGPT for ${firstTimeAsking ? "" : "more "}vocab.`);
     let question = `From the following text, can you provide me with ${numToAskFor} ${
-      remaining == num ? "" : "NEW(not given previously)"
-    } ${difficulty} level key terms to understand the text that contain: 1) The Vietnamese word, 2) the English translation, 3) root words : ${content}. Please give me the flashcards in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", "roots": "VN root1(EN translation), VN root2(EN translation)..."},...]`;
+      firstTimeAsking ? "" : "NEW(not given previously)"
+    } ${difficulty} level key terms to understand the text that contain: 1) The Vietnamese word, 2) the English translation, 3) root words : ${content}. Please give me the flashcards in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", "roots": "VN root1(EN translation), VN root2(EN translation)..."},...]. Here is the content: ${content}`;
 
     // Todo: fix any type
     let res: any = await api.sendMessage(question, { parentMessageId });
@@ -53,6 +54,7 @@ export default async function getVocab(
       question = `I didn't get an array of objects in valid JSON format. Please try again. Please give me ${numToAskFor} ${
         remaining == num ? "" : "NEW(not given previously)"
       } ${difficulty} level key terms from the previous Vietnamese text in an array of objects in valid JSON format: [{"VN": "vietnamese word", "EN": "english translation", "roots": "VN root1(EN translation), VN root2(EN translation),..."},...]`;
+
       res = await api.sendMessage(question, {
         parentMessageId: res.id,
       });

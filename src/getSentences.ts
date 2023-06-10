@@ -37,12 +37,7 @@ export default async function getSentences(
     );
     let question = `From the following text, can you provide me with ${numToAskFor} ${
       firstTimeAsking ? "" : "NEW(not given previously)"
-    } ${difficulty} level vietnamese sentences to understand the text in an array in valid JSON format?: ["vietnamese sentence",...].`;
-
-    // if first time asking, provide content
-    if (firstTimeAsking) {
-      content += ` Here is the content: ${content}`;
-    }
+    } ${difficulty} level vietnamese sentences to understand the text in an array in valid JSON format?: ["vietnamese sentence",...]. Here is the content. ${content}`;
 
     // Todo: fix any type
     let res: any = await api.sendMessage(question, { parentMessageId });
