@@ -1,6 +1,5 @@
 import { Page } from "puppeteer";
-import { promptForInput } from "./utils";
-import { translateString } from "./translateSentences";
+import { promptForInput, translateString } from "./utils";
 
 async function selectItem(
   page: Page,

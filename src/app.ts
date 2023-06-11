@@ -1,10 +1,10 @@
 // for VN Express
 import puppeteer from "puppeteer";
-import { selectItem } from "./puppeteerHelpers";
+import { selectItem } from "./puppeteerUtils";
 import getVocab from "./getVocab";
 import getSentences from "./getSentences";
-import { parseDate, promptForInput } from "./utils";
-import writeToCsv from "./writeToCsv";
+import { parseDate, promptForInput, createTitle } from "./utils";
+import { addCsvToAnki, writeToCsv } from "./csvFunctions";
 
 const scrape = async (): Promise<any> => {
   try {
@@ -101,12 +101,10 @@ async function scrapeAndProcess() {
   console.log(result.sentences);
 
   await writeToCsv(result);
-}
 
-/* TODO:
-- fix issue with npm start
-- parse content to remove whitespace and css code
-- truncate content and question to 4000 characters / 500 words due to chatgpt limits
-*/
+  const formattedTitle = createTitle(result.title);
+  await addCsvToAnki(`${formattedTitle}_vocab.csv`);
+  await addCsvToAnki(`${formattedTitle}_sentences.csv`);
+}
 
 scrapeAndProcess();
