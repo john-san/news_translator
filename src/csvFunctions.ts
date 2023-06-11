@@ -4,6 +4,11 @@ import fs from "fs";
 import { createObjectCsvWriter as createCsvWriter } from "csv-writer";
 import csv from "csv-parser";
 import axios from "axios";
+import { createTitle } from "./utils";
+import dotenv from "dotenv";
+dotenv.config();
+
+const { VOCAB_DECK, VOCAB_MODEL, SENTENCE_DECK, SENTENCE_MODEL } = process.env;
 
 type writeToCsvProps = {
   url: string;
@@ -36,11 +41,16 @@ async function writeToCsv({
     fs.mkdirSync(dataPath);
   }
 
+  // create title
+  const formattedTitle = createTitle(title);
+  // create file name
+  let fileName = `${formattedTitle}_vocab.csv`;
+
   // If you don't want to write a header line, don't give title to header elements and just give field IDs as a string.
   // removing titles for now
   // Set up CSV writer for vocab
   let csvWriter = createCsvWriter({
-    path: `${dataPath}/vnexpress_${date}_vocab.csv`,
+    path: `${dataPath}/${fileName}`,
     header: ["VN_word", "EN_word", "roots", "title", "date", "url"],
     fieldDelimiter: ";",
   });
@@ -60,19 +70,18 @@ async function writeToCsv({
     };
   });
 
-  let fileName = `vnexpress_${date}_vocab.csv`;
   try {
     await csvWriter.writeRecords(vocabData);
     console.log(`${fileName} was written successfully`);
-    await addCsvToAnki(fileName);
-    console.log(`${fileName} was added to Anki successfully`);
   } catch (err) {
     console.log(err);
   }
 
+  fileName = `${formattedTitle}_sentences.csv`;
+
   // Set up CSV writer for sentences
   csvWriter = createCsvWriter({
-    path: `${dataPath}/vnexpress_${date}_sentences.csv`,
+    path: `${dataPath}/${fileName}`,
     header: ["VN_sentence", "EN_sentence", "title", "date", "url"],
     fieldDelimiter: ";",
   });
@@ -85,12 +94,9 @@ async function writeToCsv({
     };
   });
 
-  fileName = `vnexpress_${date}_sentences.csv`;
   try {
     await csvWriter.writeRecords(sentencesData);
     console.log(`${fileName} was written successfully`);
-    await addCsvToAnki(fileName);
-    console.log(`${fileName} was added to Anki successfully`);
   } catch (err) {
     console.log(err);
   }
@@ -108,12 +114,12 @@ async function addCsvToAnki(fileName: string) {
   let modelName: string;
   if (fileName.includes("vocab")) {
     headers = ["VN_word", "EN_word", "roots", "title", "date", "url"];
-    deckName = "Tiếng Việt: Chung::Tin tức::Vocab";
-    modelName = "News-Vocab";
+    deckName = VOCAB_DECK || "Default";
+    modelName = VOCAB_MODEL || "Basic";
   } else if (fileName.includes("sentences")) {
-    headers = ["VN_sentence", "EN_sentence", "title", "date", "url"];
-    deckName = "Tiếng Việt: Chung::Tin tức::Sentences";
-    modelName = "News-Sentences";
+    headers = ["ntence", "EN_sentence", "title", "date", "url"];
+    deckName = SENTENCE_DECK || "Default";
+    modelName = SENTENCE_MODEL || "Basic";
   } else {
     throw new Error("Invalid file name");
   }
@@ -167,6 +173,8 @@ async function addCsvToAnki(fileName: string) {
           console.error("An error occurred while adding note:", error);
         }
       }
+
+      console.log(`${fileName} flashcards added to anki successfully`);
     });
 }
 

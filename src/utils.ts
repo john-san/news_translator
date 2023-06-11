@@ -1,5 +1,7 @@
 import readline from "readline";
 import translate from "@iamtraction/google-translate";
+import { format } from "date-fns";
+import { removeVI } from "jsrmvi";
 
 function parseDate(date: string): string | null {
   // get date and parse it to just get the date
@@ -95,7 +97,7 @@ const promptForInput = async <T>(
   }
 };
 
-export async function translateString(s: string): Promise<string> {
+async function translateString(s: string): Promise<string> {
   const translation = await translate(s, {
     from: "vi",
     to: "en",
@@ -104,4 +106,16 @@ export async function translateString(s: string): Promise<string> {
   return translation.text;
 }
 
-export { parseDate, sleep, parseJson, promptForInput };
+function createTitle(title: string): string {
+  const date = format(new Date(), "MM-dd-yy");
+  return `${date}_${removeVI(title)}`;
+}
+
+export {
+  parseDate,
+  sleep,
+  parseJson,
+  promptForInput,
+  translateString,
+  createTitle,
+};

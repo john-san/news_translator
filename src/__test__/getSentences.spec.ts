@@ -1,9 +1,9 @@
 import getSentences from "../getSentences";
-import { sampleText1 } from "./testUtils";
+import { sampleText } from "./testUtils";
 
 describe("getSentences", () => {
   it("should return an array of sentences", async () => {
-    const result = await getSentences(sampleText1);
+    const result = await getSentences(sampleText);
     // check if it returns an array of objects. check the that VN and EN are strings
     expect(result).toEqual(
       expect.arrayContaining([
