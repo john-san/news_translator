@@ -1,4 +1,5 @@
 import readline from "readline";
+import translate from "@iamtraction/google-translate";
 
 function parseDate(date: string): string | null {
   // get date and parse it to just get the date
@@ -93,5 +94,14 @@ const promptForInput = async <T>(
     rl.close();
   }
 };
+
+export async function translateString(s: string): Promise<string> {
+  const translation = await translate(s, {
+    from: "vi",
+    to: "en",
+  });
+
+  return translation.text;
+}
 
 export { parseDate, sleep, parseJson, promptForInput };

@@ -5,13 +5,6 @@ import { createObjectCsvWriter as createCsvWriter } from "csv-writer";
 import csv from "csv-parser";
 import axios from "axios";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const dataPath = `${__dirname}\\data\\`;
-// const filename = path.resolve(process.cwd(), __filename);
-// const __dirname = dirname(filename);
-// const dataPath = path.join(__dirname, "data");
-
 type writeToCsvProps = {
   url: string;
   title: string;
@@ -35,6 +28,9 @@ async function writeToCsv({
   vocab,
   sentences,
 }: writeToCsvProps): Promise<void> {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const dataPath = `${__dirname}\\data\\`;
   // create folder if it doesn't exist
   if (!fs.existsSync(dataPath)) {
     fs.mkdirSync(dataPath);
@@ -102,8 +98,8 @@ async function writeToCsv({
 
 async function addCsvToAnki(fileName: string) {
   const data: any[] = [];
-  // const __filename = fileURLToPath(import.meta.url);
-  // const __dirname = dirname(__filename);
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
   const filePath = `${__dirname}/data/${fileName}`;
 
   // check if fileName includes "vocab" or "sentences"
@@ -174,4 +170,4 @@ async function addCsvToAnki(fileName: string) {
     });
 }
 
-export default writeToCsv;
+export { writeToCsv, addCsvToAnki };

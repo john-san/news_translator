@@ -4,7 +4,7 @@ import { selectItem } from "./puppeteerHelpers";
 import getVocab from "./getVocab";
 import getSentences from "./getSentences";
 import { parseDate, promptForInput } from "./utils";
-import writeToCsv from "./writeToCsv";
+import { writeToCsv } from "./csvFunctions";
 
 const scrape = async (): Promise<any> => {
   try {
@@ -102,11 +102,5 @@ async function scrapeAndProcess() {
 
   await writeToCsv(result);
 }
-
-/* TODO:
-- fix issue with npm start
-- parse content to remove whitespace and css code
-- truncate content and question to 4000 characters / 500 words due to chatgpt limits
-*/
 
 scrapeAndProcess();
